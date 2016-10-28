@@ -129,6 +129,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                 if (!isDirectory)
                 {
                     //load up existing metadata or create a fresh one
+                    
                     var metadata = GetMetadata();
 
                     //match up the metadata with the information on the server
@@ -144,11 +145,11 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                     //begin (or resume) uploading/downloading the file
                     if(this.Parameters.IsDownload)
                     {
-                        DownloadFile(metadata);
+                         DownloadFile(metadata);
                     }
                     else
                     {
-                        UploadFile(metadata);
+                         UploadFile(metadata);
                     }
 
                     //clean up metadata after a successful upload
@@ -156,8 +157,10 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                 }
                 else
                 {
+                    Console.WriteLine("Getting meta data...");
                     var metadata = GetFolderMetadata();
-                    
+                    Console.WriteLine("Getting meta data done");
+
                     //match up the metadata with the information on the server
                     if (this.Parameters.IsResume)
                     {
@@ -194,13 +197,14 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                         var filesPerSave = (int)Math.Ceiling((double)metadata.FileCount / 100);
                         //start a bunch of new threads that pull from the file list and then wait for them to finish
                         int filesCompleted = 0;
+                        List<Task> tasks = new List<Task>();
                         for (int i = 0; i < threadCount; i++)
                         {
                             var t = new Thread(() => {
+                             //Task t = Task.Run(() => {
                                 UploadMetadata file;
                                 while (allFiles.TryDequeue(out file))
-                                {
-                                    
+                                {                                  
                                     try
                                     {
                                         _token.ThrowIfCancellationRequested();
@@ -210,11 +214,11 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                                             var segmentProgressTracker = CreateSegmentProgressTracker(file, fileProgressTracker);
                                             if (this.Parameters.IsDownload)
                                             {
-                                                DownloadFile(file, segmentProgressTracker);
+                                                  DownloadFile(file, segmentProgressTracker);
                                             }
                                             else
                                             {
-                                                UploadFile(file, segmentProgressTracker);
+                                                  UploadFile(file, segmentProgressTracker);
                                             }
                                         }
                                     }
@@ -290,6 +294,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                             });
                             t.Start();
                             executionThreads.Add(t);
+                            //tasks.Add(t);
                         }
 
                         // create a thread that handles saving of the metadata so that there is no locking happening in the upload threads
@@ -310,7 +315,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                                     }
 
                                     // sleep for two seconds between checks to save just to keep this thread from using too many cycles.
-                                    Thread.Sleep(2000);
+                                    //Thread.Sleep(2000);
                                 }
                                 catch (OperationCanceledException ex)
                                 {
@@ -333,6 +338,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                         saveThread.Start();
                         trackingThreads.Add(saveThread);
 
+                        //Task.WaitAll(tasks.ToArray());
                         foreach (var t in executionThreads)
                         {
                             t.Join();
@@ -981,8 +987,8 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                     msu.Download();
 
                     //concatenate the files at the end
-                    ConcatenateSegments(metadata);
-                    
+                    ConcatenateSegments(metadata);     
+                                                 
                 }
                 else
                 {

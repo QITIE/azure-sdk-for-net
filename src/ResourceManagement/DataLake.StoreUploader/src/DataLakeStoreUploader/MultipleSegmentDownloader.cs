@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Management.DataLake.StoreUploader
 {
@@ -91,7 +92,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
         /// Executes the download of the segments in the file that were not already downloaded (i.e., those that are in a 'Pending' state).
         /// </summary>
         /// <returns></returns>
-        public void Download()
+        public async void Download()
         {
             var pendingSegments = GetPendingSegmentsToDownload(_metadata);
             var exceptions = new ConcurrentQueue<Exception>();
@@ -100,6 +101,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
             var threads = new List<Thread>(threadCount);
 
             //start a bunch of new threads that pull from the pendingSegments and then wait for them to finish
+            /**
             for (int i = 0; i < threadCount; i++)
             {
                 var t = new Thread(() => { ProcessPendingSegments(pendingSegments, exceptions); });
@@ -111,8 +113,19 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
             {
                 t.Join();
             }
+            **/
+            //List<Task> tasks = new List<Task>();
+            //for (int i = 0; i < threadCount; i++)
+            //{
+            //     Task t = Task.Run(() =>
+            //     {
+                    await ProcessPendingSegments(pendingSegments, exceptions);
+            //     });
 
+            //    tasks.Add(t);
+            //}
 
+            //await Task.WhenAll(tasks.ToArray());
             // aggregate any exceptions and throw them back at our caller
             if (exceptions.Count > 0 && !_token.IsCancellationRequested)
             {
@@ -128,7 +141,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
         /// </summary>
         /// <param name="pendingSegments">The pending segments.</param>
         /// <param name="exceptions">The exceptions.</param>
-        private void ProcessPendingSegments(Queue<SegmentQueueItem> pendingSegments, ConcurrentQueue<Exception> exceptions)
+        private async Task<int> ProcessPendingSegments(Queue<SegmentQueueItem> pendingSegments, ConcurrentQueue<Exception> exceptions)
         {
             while (pendingSegments.Count > 0)
             {
@@ -173,6 +186,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                     }
                 }
             }
+            return 1;
         }
 
         /// <summary>
@@ -191,7 +205,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
             try
             {
                 segmentDownloader.Download();
-                
+                Console.WriteLine("Download all segments done at thread {0}", Thread.CurrentThread.ManagedThreadId);
                 //if we reach this point, the download was successful; mark it as such 
                 UpdateSegmentMetadataStatus(metadata, segmentNumber, SegmentUploadStatus.Complete);
             }
