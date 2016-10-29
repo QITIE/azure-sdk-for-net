@@ -221,8 +221,8 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                         using (var readStream = _frontEnd.ReadStream(_metadata.InputFilePath, offset, lengthToDownload, _metadata.IsDownload))
                         {
 
-                             readStream.CopyTo(outputStream, (int)lengthToDownload);
-
+                            readStream.CopyTo(outputStream, (int)lengthToDownload);
+                            readStream.Close();
                         }
 
                         var lengthReturned = outputStream.Position - offset;
