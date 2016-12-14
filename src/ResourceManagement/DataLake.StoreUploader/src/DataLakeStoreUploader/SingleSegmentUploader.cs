@@ -274,6 +274,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                 }
                 catch (AggregateException e)
                 {
+                    Console.WriteLine("AggregateException: {0}", e.ToString());
                     if (e.InnerExceptions.Count == 1 && e.InnerException is AdlsErrorException)
                     {
                         if(((AdlsErrorException)e.InnerException).Body.RemoteException is AdlsBadOffsetException)
@@ -313,6 +314,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                 }
                 catch (AdlsErrorException e)
                 {
+                    Console.WriteLine("AdlsErrorException: {0}", e.ToString());
                     if (e.Body.RemoteException is AdlsBadOffsetException)
                     {
                         // this means we tried to re-upload at the same location and the upload actually succeeded, which means we should move on.
@@ -336,6 +338,7 @@ namespace Microsoft.Azure.Management.DataLake.StoreUploader
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("Exception: {0}", ex.ToString());
                     //if we tried more than the number of times we were allowed to, give up and throw the exception
                     if (attemptCount >= MaxBufferUploadAttemptCount)
                     {
